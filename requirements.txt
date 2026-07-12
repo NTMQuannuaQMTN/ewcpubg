@@ -4,4 +4,6 @@ numpy
 tqdm
 beautifulsoup4
 scikit-learn
+matplotlib
 jupyter
+python-dotenv

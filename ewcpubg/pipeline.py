@@ -33,6 +33,8 @@ from .features import (
     build_player_features,
     build_dataset,
     build_history,
+    build_twire_team_ratings,
+    attach_competition_context,
     build_history_features,
 )
 from .model import train_model, feature_importance, predict_ranks, rank_predictions
@@ -59,7 +61,7 @@ def run():
     print(player_df.shape)
 
     # --- Twire team/power rankings (S3) ------------------------------------
-    fetch_team_ranking()  # exploratory only, unused downstream (kept for parity)
+    team_rank_df = fetch_team_ranking()
 
     power_df = fetch_power_ranking()
     team_power = build_team_power(power_df)
@@ -82,6 +84,12 @@ def run():
     player_features = build_player_features(player_df)
     dataset = build_dataset(team_df, player_features)
 
+    # Twire Team Rating as a competition-quality prior (unranked teams get a
+    # capped estimate, never allowed to exceed the weakest officially ranked
+    # team), plus per-stage field strength / strength of schedule from it.
+    twire_team_ratings = build_twire_team_ratings(team_rank_df, dataset)
+    dataset = attach_competition_context(dataset, twire_team_ratings)
+
     for df, cols in [
         (team_df, ["team"]),
         (player_df, ["teamName"]),
@@ -100,7 +108,7 @@ def run():
     history = build_history(dataset, ewc_teams)
     print(history.shape)
 
-    history_features = build_history_features(history, history_power)
+    history_features = build_history_features(history, history_power, dataset)
     history_features.to_csv(f"{config.OUTPUT_DIR}/ewc_history_features.csv", index=False)
 
     # --- Model ------------------------------------------------------------------

@@ -41,6 +41,16 @@ FEATURES = [
     "utility_rating",
     "finisher_rating",
     "star_players",
+
+    "twire_team_rating",
+    "tournament_strength",
+    "strength_of_schedule",
+
+    "global_events",
+    "regional_events",
+    "international_matches",
+    "regional_matches",
+    "experience_score",
 ]
 
 

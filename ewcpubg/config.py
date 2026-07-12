@@ -1,13 +1,29 @@
 """Constants: API endpoints, credentials, tournament metadata, weights."""
 
+import os
 from pathlib import Path
+
+try:
+    from dotenv import load_dotenv
+    load_dotenv(Path(__file__).resolve().parent.parent / ".env")
+except ImportError:
+    pass
 
 # --- Twire GraphQL API --------------------------------------------------------
 
 API_URL = "https://tjjkdyimqrb7jjnc6m5rpefjtu.appsync-api.eu-west-1.amazonaws.com/graphql"
 
+TWIRE_API_KEY = os.environ.get("TWIRE_API_KEY")
+
+if not TWIRE_API_KEY:
+    raise RuntimeError(
+        "TWIRE_API_KEY is not set. Copy .env.example to .env in the project "
+        "root and fill in the key, or export TWIRE_API_KEY in your shell/"
+        "Kaggle secrets."
+    )
+
 HEADERS = {
-    "x-api-key": "da2-vqpq6wms5ndbvhl2r7kvzbpmfi",
+    "x-api-key": TWIRE_API_KEY,
     "Content-Type": "application/json",
     "Origin": "https://twire.gg",
     "Referer": "https://twire.gg/",
@@ -137,20 +153,35 @@ TOURNAMENTS = {
 # etc.), so keying on them silently fell through to the 1.0 default weight
 # for those tournaments. Deriving from TOURNAMENTS[key]["name"] keeps this
 # in sync automatically.
+#
+# Two tiers only: PGS1-6 are the only "global" events we track (weight 4.0);
+# everything else (PWS, PCL, PEC, PTS, PAS, PVS, PMS) is regional (1.5).
+GLOBAL_TOURNAMENT_WEIGHT = 4.0
+REGIONAL_TOURNAMENT_WEIGHT = 1.5
+
 _PGS_WEIGHTS = {
-    "PGS1": 0.80,
-    "PGS2": 0.90,
-    "PGS3": 1.00,
-    "PGS4": 1.10,
-    "PGS5": 1.20,
-    "PGS6": 1.30,
+    "PGS1": GLOBAL_TOURNAMENT_WEIGHT,
+    "PGS2": GLOBAL_TOURNAMENT_WEIGHT,
+    "PGS3": GLOBAL_TOURNAMENT_WEIGHT,
+    "PGS4": GLOBAL_TOURNAMENT_WEIGHT,
+    "PGS5": GLOBAL_TOURNAMENT_WEIGHT,
+    "PGS6": GLOBAL_TOURNAMENT_WEIGHT,
 }
-_REGIONAL_DEFAULT_WEIGHT = 0.60
 
 TOURNAMENT_WEIGHTS = {
-    TOURNAMENTS[key]["name"]: _PGS_WEIGHTS.get(key, _REGIONAL_DEFAULT_WEIGHT)
+    TOURNAMENTS[key]["name"]: _PGS_WEIGHTS.get(key, REGIONAL_TOURNAMENT_WEIGHT)
     for key in TOURNAMENTS
 }
+
+# Tournament keys (short codes) considered "global" vs "regional" -- used to
+# build per-team appearance counts (global_events, regional_events, etc).
+GLOBAL_TOURNAMENT_KEYS = set(_PGS_WEIGHTS)
+REGIONAL_TOURNAMENT_KEYS = set(TOURNAMENTS) - GLOBAL_TOURNAMENT_KEYS
+
+# Bayesian shrinkage pseudo-count: how many "league-average" samples a team's
+# own history has to outweigh before its raw average is trusted at face value.
+# Higher k = more skepticism toward small samples.
+SHRINKAGE_K = 5
 
 # Stage importance
 STAGE_WEIGHTS = {

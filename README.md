@@ -20,8 +20,14 @@ using Twire stats/power-ranking data and Liquipedia rosters.
 
 ```bash
 pip install -r requirements.txt
+cp .env.example .env   # fill in TWIRE_API_KEY
 python -m ewcpubg.pipeline
 ```
+
+`TWIRE_API_KEY` is read from the environment (via `.env`, gitignored) rather
+than hardcoded, so it never ends up committed. On Kaggle, set it under
+Add-ons -> Secrets instead and load it into `os.environ["TWIRE_API_KEY"]`
+before running the notebook's cells.
 
 This writes `output/team_stats.csv`, `output/player_stats.csv`,
 `output/ewc2026_rosters.csv`, `output/ewc_history_features.csv`, and prints

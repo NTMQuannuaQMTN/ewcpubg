@@ -18,7 +18,9 @@ POWER_SCORE_COLUMNS = [
 
 def fetch_team_ranking():
     data = requests.get(TEAM_RANKING_URL).json()["teams"]
-    return pd.DataFrame(data)
+    team_rank_df = pd.DataFrame(data)
+    team_rank_df["team"] = team_rank_df["name"].apply(normalize_team)
+    return team_rank_df
 
 
 def fetch_power_ranking():
